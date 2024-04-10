@@ -17,6 +17,7 @@ export interface User extends Document {
     walletAddress: string;
     secretKey: string;
     mode: string;
+    wallets: string[]
     state: OrderingData;
     orderingData?: OrderingData[];
 }
@@ -42,7 +43,7 @@ const uri = 'mongodb://dusanpracaex:ilovemysisterwisdom@194.163.169.31:27017/?au
 
 // Connect to MongoDB
 export async function connect(): Promise<typeof mongoose> {
-  return  mongoose.connect(uri);
+  return  mongoose.connect(uri,{tls:false});
 }
 
 // Define Mongoose schemas
@@ -60,6 +61,7 @@ const userSchema = new Schema<User>({
     walletAddress: String,
     secretKey: String,
     mode: String,
+    wallets: [String],
     state: orderingDataSchema,
     orderingData: [orderingDataSchema]
 });
@@ -88,7 +90,10 @@ export const PoolModel: Model<Pool> = mongoose.model<Pool>('Pool', poolSchema);
 export async function updateUserState(telegramID: number, newState: OrderingData): Promise<void> {
     await UserModel.updateOne({ telegramID }, { $set: { state: newState } });
 }
-
+//update wallet addres and secretkey
+export async function updateWallet(telegramID: number, walletAddress: string, secretKey: string): Promise<void> {
+    await UserModel.updateOne({ telegramID }, { $set: { walletAddress, secretKey } });
+}
 //update user mode
 export async function updateUserMode(telegramID: number, newMode: string): Promise<void> {
     await UserModel.updateOne({ telegramID }, { $set: { mode: newMode } });
@@ -112,6 +117,11 @@ export async function getAllUsers(): Promise<User[]> {
 // Add ordering data to a user
 export async function addOrderingDataToUser(telegramID: number, orderingData: OrderingData): Promise<void> {
     await UserModel.updateOne({ telegramID }, { $push: { orderingData } });
+}
+
+// Add ordering data to a user
+export async function addNewWalletToUser(telegramID: number, wallets: string): Promise<void> {
+    await UserModel.updateOne({ telegramID }, { $push: { wallets } });
 }
 
 // Delete ordering data from a user

@@ -5,7 +5,7 @@ import QRCode from 'qrcode';
 import TelegramBot, { CallbackQuery, InlineKeyboardButton,Message } from 'node-telegram-bot-api';
 import { getConnector } from './ton-connect/connector';
 import { addTGReturnStrategy, buildUniversalKeyboard, getPriceStr, pTimeout, pTimeoutException , replyMessage} from './utils';
-import { addOrderingDataToUser, createUser, getPools, getPoolWithCaption, getUserByTelegramID, OrderingData, updateUserMode, updateUserState,User, UserModel } from './ton-connect/mongo';
+import { addNewWalletToUser, addOrderingDataToUser, createUser, getPools, getPoolWithCaption, getUserByTelegramID, OrderingData, updateUserMode, updateUserState,updateWallet,User, UserModel } from './ton-connect/mongo';
 import TonWeb from 'tonweb';
 import nacl from 'tweetnacl';
 import { fetchDataGet, Jetton, walletAsset } from './dedust/api';
@@ -20,7 +20,9 @@ const tonClient = new TonClient4({ endpoint: 'https://mainnet-v4.tonhubapi.com' 
 
 export const commandCallback = {
     tradingCallback:handleTradingCallback,
-    addNewOrder:handleAddNewOrder
+    addNewOrder:handleAddNewOrder,
+    addNewWallet:handleAddNewWallet,
+    walletSelect: handleWalletSelect
 }
 async function handleAddNewOrder(query: CallbackQuery){
     console.log(query);
@@ -164,16 +166,7 @@ export async function handleStartCommand (msg: TelegramBot.Message)  {
         });
         }
     else {
-        //create a new wallet
-        // const keyPair = nacl.sign.keyPair();
-        // let wallet = tonWeb.wallet.create({ publicKey: keyPair.publicKey, wc: 0 });
-        // const address = await wallet.getAddress();
-        // const seqno = await wallet.methods.seqno().call();
-        // const deploy = wallet.deploy(keyPair.secretKey);
-        // const deployFee = await deploy.estimateFee();
-        // const deploySended = await deploy.send();
-        // const deployQuery = await deploy.getQuery();
-        //save in db
+        
         let mnemonics = await mnemonicNew();
         let keyPair = await mnemonicToPrivateKey(mnemonics);
         // Create wallet contract
@@ -185,6 +178,7 @@ export async function handleStartCommand (msg: TelegramBot.Message)  {
                 publicKey: keyPair!.publicKey
             })
         );
+        addNewWalletToUser(msg.chat.id!,mnemonics.join(','));
         const address = wallet.address;
         let newUser = await UserModel.create( {
             telegramID: msg.chat!.id,
@@ -224,6 +218,31 @@ export async function handleStartCommand (msg: TelegramBot.Message)  {
     parse_mode:'HTML'
     }
     );
+}
+
+export async function 
+handleAddNewWallet(query: CallbackQuery): Promise<void> {
+    let mnemonics = await mnemonicNew();
+    await addNewWalletToUser(query.message?.chat.id!,mnemonics.join(','));
+    await handleShowMyWalletCommand(query.message!);
+}
+
+export async function handleWalletSelect(query: CallbackQuery, _:string): Promise<void> {
+    const user = await getUserByTelegramID(query.message?.chat.id!);
+    let mnemonic = user!.wallets[Number(_)]!.split(',')
+    let keyPair = await mnemonicToPrivateKey(mnemonic);
+    
+    const wallet = tonClient.open(
+        WalletContractV4.create({
+            workchain: 0,
+            publicKey: keyPair!.publicKey
+        })
+    );
+    await updateWallet( query.message?.chat.id!,
+        wallet.address.toString(),
+        _
+    );
+    await handleShowMyWalletCommand(query.message!)
 }
 
 export async function handleConnectCommand(msg: TelegramBot.Message): Promise<void> {
@@ -498,9 +517,16 @@ export async function handleShowMyWalletCommand(msg: TelegramBot.Message): Promi
         });
     });
     
+    let walletBtns: InlineKeyboardButton[][] = [[{text: "Add New Wallet", callback_data: JSON.stringify({method:"addNewWallet"})}]];
+    user?.wallets.map((secret, index) => {
+        if(!walletBtns[index + 1]) walletBtns[Math.floor((index + 1))] = [];
+        let temp = secret;
+        walletBtns[index + 1] = [{text:"Wallet " + index, callback_data:JSON.stringify({method:'walletSelect',data:index})}]
+    })
+    walletBtns.push([{text:'<< Back', callback_data: 'newStart'}])
     replyMessage(msg,
         `💵 My wallet\n\nYour RewardBot Wallet address:\n <code>${address}</code>\n ${outputStr}`,
-        [[{text:'<< Back', callback_data: 'newStart'}]]
+        walletBtns
     )
 }
 

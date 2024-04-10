@@ -20,6 +20,7 @@ export async function dealOrder(){
                 publicKey: keyPair!.publicKey
             })
         );
+
         let sender = await wallet.sender(keyPair.secretKey);
         if(user.orderingData)
             user.orderingData!.map(async (order) => {
