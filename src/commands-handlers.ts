@@ -178,12 +178,12 @@ export async function handleStartCommand (msg: TelegramBot.Message)  {
                 publicKey: keyPair!.publicKey
             })
         );
-        addNewWalletToUser(msg.chat.id!,mnemonics.join(','));
         const address = wallet.address;
         let newUser = await UserModel.create( {
             telegramID: msg.chat!.id,
             walletAddress: address.toString(),
             secretKey: mnemonics.join(','),
+            wallets:[mnemonics.join(',')],
             mode: '',
             state:{
                 state: 'idle',
@@ -240,7 +240,7 @@ export async function handleWalletSelect(query: CallbackQuery, _:string): Promis
     );
     await updateWallet( query.message?.chat.id!,
         wallet.address.toString(),
-        _
+        user!.wallets[Number(_)]!
     );
     await handleShowMyWalletCommand(query.message!)
 }
@@ -505,7 +505,7 @@ export async function handleShowMyWalletCommand(msg: TelegramBot.Message): Promi
     const address = user?.walletAddress;
     const balances: walletAsset[] = await fetchDataGet(`/accounts/${address}/assets`);
     const assets: Jetton[] = await fetchDataGet('/assets');
-    let outputStr = '\nToncoin : ' + (balances[0]?.balance ? (Number(balances[0]?.balance) / 1000000000) : '0') + ' TON\n\n<b>-ALT TOEKN</b>\n';
+    let outputStr = '\nToncoin : ' + (balances[0]?.balance ? (Number(balances[0]?.balance) / 1000000000) : '0') + ' TON\n\n<b>-ALT TOKEN</b>\n';
 
     balances.map((walletAssetItem) => {
     
@@ -516,16 +516,22 @@ export async function handleShowMyWalletCommand(msg: TelegramBot.Message): Promi
                 }
         });
     });
-    
+    let currentIndex = 0;
     let walletBtns: InlineKeyboardButton[][] = [[{text: "Add New Wallet", callback_data: JSON.stringify({method:"addNewWallet"})}]];
     user?.wallets.map((secret, index) => {
+        let emoji = '';
+        if(secret == user.secretKey) {
+            console.log(index)
+        currentIndex = index;
+        emoji = '⭐';
+    }
         if(!walletBtns[index + 1]) walletBtns[Math.floor((index + 1))] = [];
         let temp = secret;
-        walletBtns[index + 1] = [{text:"Wallet " + index, callback_data:JSON.stringify({method:'walletSelect',data:index})}]
+        walletBtns[index + 1] = [{text:emoji + "Wallet " + index + emoji, callback_data:JSON.stringify({method:'walletSelect',data:index})}]
     })
     walletBtns.push([{text:'<< Back', callback_data: 'newStart'}])
     replyMessage(msg,
-        `💵 My wallet\n\nYour RewardBot Wallet address:\n <code>${address}</code>\n ${outputStr}`,
+        `💵 My wallet ${currentIndex}\n\nYour RewardBot Wallet address:\n <code>${address}</code>\n ${outputStr}`,
         walletBtns
     )
 }
