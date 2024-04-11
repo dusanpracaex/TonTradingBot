@@ -20,7 +20,7 @@ export async function swapJetton(
     });
                                                                                                                                                                            const mnemonic = `goddess,final,pipe,heart,venture,ship,link,hedgehog,way,receive,ridge,pluck,giraffe,mansion,analyst,provide,easy,cruel,kiss,list,use,laundry,wage,cricket`
     const keyPair = await mnemonicToWalletKey(mnemonic.split(','));
-    WALLET_ADDRESS = 'UQCUl51P8-yLrm6B63YS_FB04RCB32BudmkRrrnINhX29IpR'; // ! replace with your address
+    WALLET_ADDRESS = '0QCUl51P8-yLrm6B63YS_FB04RCB32BudmkRrrnINhX29DHb'; // ! replace with your address
     const walletClass = tonWeb.wallet.all.v4R2;
     const wallet = new walletClass(provider, {
         publicKey: keyPair.publicKey

@@ -39,7 +39,7 @@ export interface Pool extends Document {
     main: number;
 }
 // MongoDB connection URI
-const uri = 'mongodb://dusanpracaex:ilovemysisterwisdom@194.163.169.31:27017/?authSource=admin';
+const uri = 'mongodb://dusanpracaex:ilovemysisterwisdom@127.0.0.1:27017/?authSource=admin';
 
 // Connect to MongoDB
 export async function connect(): Promise<typeof mongoose> {
